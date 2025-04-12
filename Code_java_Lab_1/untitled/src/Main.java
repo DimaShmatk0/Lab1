@@ -1,52 +1,53 @@
 import java.util.Random;
+import java.util.concurrent.CountDownLatch;
 
 public class Main {
 
     public static void main(String[] args) {
-        int threadCount = 8;
+        int numberOfThreads = 3;
+        int minDuration = 3;     // мінімальна тривалість потоку (сек)
+        int maxDuration = 10;    // максимальна тривалість потоку (сек)
+        int minStep = 1;         // мінімальний крок додавання
+        int maxStep = 5;         // максимальний крок додавання
 
-        int[] secondsArray = generateArray(threadCount, 10, 30);
-        int[] additionsArray = generateArray(threadCount, 1, 10);
+        int[] threadDurations = generateRandomArray(numberOfThreads, minDuration, maxDuration);
+        int[] incrementSteps = generateRandomArray(numberOfThreads, minStep, maxStep);
 
-        System.out.println("Randomly generated arrays:");
-        printArray("Seconds Array", secondsArray);
-        printArray("Additions Array", additionsArray);
+        System.out.print("Тривалість потоків: ");
+        printArray(threadDurations);
+        System.out.print("Кроки додавання: ");
+        printArray(incrementSteps);
 
-        /*
-        int[] manualSeconds = new int[]{15, 20, 25};
-        int[] manualAdditions = new int[]{2, 5, 10};
-        */
+        CountDownLatch launchSignal = new CountDownLatch(1); // Сигнал запуску всіх потоків
+        NumberCalculator[] calculators = new NumberCalculator[threadDurations.length];
 
-        /*
-        System.out.println("\nManually provided arrays:");
-        printArray("Manual Seconds Array", manualSeconds);
-        printArray("Manual Additions Array", manualAdditions);
-        */
-
-        startThreads(threadCount, secondsArray, additionsArray);
-    }
-
-    private static void startThreads(int threadCount, int[] secondsArray, int[] additionsArray) {
-        for (int threadId = 0; threadId < threadCount; threadId++) {
-            BreakThread breakThread = new BreakThread(secondsArray[threadId]); // створення потоку зі зміною canBreak через secondsArray секунд
-            new Thread(breakThread).start();
-            new CalculateNum(threadId, breakThread, additionsArray).start();
-        }
-    }
-
-    public static int[] generateArray(int count, int minValue, int maxValue) {
-        Random random = new Random();
-        int[] result = new int[count];
-
-        for (int i = 0; i < count; i++) {
-            result[i] = random.nextInt(maxValue - minValue + 1) + minValue; // генеруємо в межах
+        for (int i = 0; i < calculators.length; i++) {
+            calculators[i] = new NumberCalculator(i, incrementSteps[i], launchSignal);
+            calculators[i].start(); // Запуск потоку в стані очікування
         }
 
+        ThreadController controller = new ThreadController(threadDurations, calculators);
+        Thread controllerThread = new Thread(controller);
+
+        System.out.println(">>> Початок!");
+        controllerThread.start();
+        launchSignal.countDown(); // Дати сигнал на запуск всім потокам
+    }
+
+    public static int[] generateRandomArray(int size, int min, int max) {
+        Random rand = new Random();
+        int[] result = new int[size];
+        for (int i = 0; i < size; i++) {
+            result[i] = rand.nextInt(max - min + 1) + min;
+        }
         return result;
     }
 
-    public static void printArray(String name, int[] array) {
-        System.out.println(name + ": " + String.join(", ",
-                java.util.Arrays.stream(array).mapToObj(String::valueOf).toArray(String[]::new)));
+    public static void printArray(int[] array) {
+        for (int value : array) {
+            System.out.print(value + " ");
+        }
+        System.out.println();
     }
 }
+

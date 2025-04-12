@@ -1,57 +1,58 @@
 ﻿using System;
+using System.Linq;
 using System.Threading;
 
 namespace Code_c__Lab_1
 {
-    public class Program
+    class Program
     {
-        public static void Main()
+        static void Main(string[] args)
         {
-            int threadCount = 8;
+            int numberOfThreads = 3;
+            int minDuration = 3;     // мінімальна тривалість потоку (сек)
+            int maxDuration = 10;    // максимальна тривалість потоку (сек)
+            int minStep = 1;         // мінімальний крок додавання
+            int maxStep = 5;         // максимальний крок додавання
 
-            int[] secondsArray = GenerateArray(threadCount, 10, 30);
-            int[] additionsArray = GenerateArray(threadCount, 1, 10);
+            int[] threadDurations = GenerateRandomArray(numberOfThreads, minDuration, maxDuration);
+            int[] incrementSteps = GenerateRandomArray(numberOfThreads, minStep, maxStep);
 
-            Console.WriteLine("Randomly generated arrays:");
-            Console.WriteLine("Seconds Array: " + string.Join(", ", secondsArray));
-            Console.WriteLine("Additions Array: " + string.Join(", ", additionsArray));
+            Console.Write("Тривалість потоків: ");
+            PrintArray(threadDurations);
+            Console.Write("Кроки додавання: ");
+            PrintArray(incrementSteps);
 
-            //int[] manualSeconds = new[] { 15, 20, 25 };
-            //int[] manualAdditions = new[] { 2, 5, 10 };
+            CountdownEvent launchSignal = new CountdownEvent(1); // Сигнал запуску всіх потоків
+            NumberCalculator[] calculators = new NumberCalculator[threadDurations.Length];
 
-            //Console.WriteLine("\nManually provided arrays:"); 
-            //PrintArray("Manual Seconds Array", manualSeconds);
-            //PrintArray("Manual Additions Array", manualAdditions);
-
-            StartThreads(threadCount, secondsArray, additionsArray);
-        }
-        private static void StartThreads(int threadCount, int[] secondsArray, int[] additionsArray)
-        {
-            for (int threadId = 0; threadId < threadCount; threadId++)
+            for (int i = 0; i < calculators.Length; i++)
             {
-                BreakThread breakThread = new(secondsArray[threadId]);
-                new Thread(new ThreadStart(breakThread.Run)).Start();
-                new CalculateNum(threadId, breakThread, additionsArray).Start();
-            }
-        }
-
-        static int[] GenerateArray(int count, int minValue, int maxValue)
-        {
-            Random random = new();
-            int[] result = new int[count];
-
-            for (int i = 0; i < count; i++)
-            {
-                result[i] = random.Next(minValue, maxValue + 1);
+                calculators[i] = new NumberCalculator(i, incrementSteps[i], launchSignal);
+                Thread thread = new Thread(calculators[i].Run); // Запуск потоку в стані очікування
+                thread.Start();
             }
 
-            return result;
+            BreakThread controller = new BreakThread(threadDurations, calculators);
+            Thread controllerThread = new Thread(controller.Run);
+
+            Console.WriteLine(">>> Початок!");
+            controllerThread.Start();
+            launchSignal.Signal(); // Дати сигнал на запуск всім потокам
         }
 
-        public static void PrintArray(string name, int[] array)
+        public static int[] GenerateRandomArray(int size, int min, int max)
         {
-            Console.WriteLine(name + ": " + string.Join(", ", array));
+            Random rand = new Random();
+            return Enumerable.Range(0, size).Select(_ => rand.Next(min, max + 1)).ToArray();
         }
 
+        public static void PrintArray(int[] array)
+        {
+            foreach (var value in array)
+            {
+                Console.Write(value + " ");
+            }
+            Console.WriteLine();
+        }
     }
 }

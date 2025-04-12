@@ -6,32 +6,40 @@ using System.Threading.Tasks;
 
 namespace Code_c__Lab_1
 {
-    public class BreakThread
+    class BreakThread
     {
-        private volatile bool canBreak = false;
-        private readonly int waitSeconds;
+        private int[] runTimes;
+        private NumberCalculator[] workers;
 
-        public BreakThread(int waitSeconds)
+        public BreakThread(int[] runTimes, NumberCalculator[] workers)
         {
-            this.waitSeconds = waitSeconds;
-        }
-
-        public bool CanBreak
-        {
-            get { return canBreak; }
+            this.runTimes = runTimes;
+            this.workers = workers;
         }
 
         public void Run()
         {
-            try
+            long startTime = DateTimeOffset.Now.ToUnixTimeMilliseconds();
+
+            bool[] isFinished = new bool[workers.Length];
+            int completedCount = 0;
+
+            while (completedCount < workers.Length)
             {
-                Thread.Sleep(waitSeconds * 1000);
+                long currentTime = DateTimeOffset.Now.ToUnixTimeMilliseconds();
+                long elapsedSeconds = (currentTime - startTime) / 1000;
+
+                for (int i = 0; i < workers.Length; i++)
+                {
+                    if (!isFinished[i] && elapsedSeconds >= runTimes[i])
+                    {
+                        workers[i].SetStopped(true);
+                        isFinished[i] = true;
+                        completedCount++;
+                    }
+                }
+
+                Thread.Sleep(200);
             }
-            catch (ThreadInterruptedException e)
-            {
-                throw new Exception("Thread was interrupted", e);
-            }
-            canBreak = true;
         }
     }
-}
