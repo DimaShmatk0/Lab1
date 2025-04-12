@@ -9,10 +9,10 @@ namespace Code_c__Lab_1
         static void Main(string[] args)
         {
             int numberOfThreads = 3;
-            int minDuration = 3;     // мінімальна тривалість потоку (сек)
-            int maxDuration = 10;    // максимальна тривалість потоку (сек)
-            int minStep = 1;         // мінімальний крок додавання
-            int maxStep = 5;         // максимальний крок додавання
+            int minDuration = 3;
+            int maxDuration = 10;
+            int minStep = 1;
+            int maxStep = 5;
 
             int[] threadDurations = GenerateRandomArray(numberOfThreads, minDuration, maxDuration);
             int[] incrementSteps = GenerateRandomArray(numberOfThreads, minStep, maxStep);
