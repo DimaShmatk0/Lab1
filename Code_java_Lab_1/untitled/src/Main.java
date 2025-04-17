@@ -4,34 +4,14 @@ import java.util.concurrent.CountDownLatch;
 public class Main {
 
     public static void main(String[] args) {
-        int numberOfThreads = 3;
-        int minDuration = 3;     // мінімальна тривалість потоку (сек)
-        int maxDuration = 10;    // максимальна тривалість потоку (сек)
-        int minStep = 1;         // мінімальний крок додавання
-        int maxStep = 5;         // максимальний крок додавання
+        int minDuration = 4;
+        int maxDuration = 10;
+        int minStep = 2;
+        int maxStep = 6;
 
-        int[] threadDurations = generateRandomArray(numberOfThreads, minDuration, maxDuration);
-        int[] incrementSteps = generateRandomArray(numberOfThreads, minStep, maxStep);
-
-        System.out.print("Тривалість потоків: ");
-        printArray(threadDurations);
-        System.out.print("Кроки додавання: ");
-        printArray(incrementSteps);
-
-        CountDownLatch launchSignal = new CountDownLatch(1); // Сигнал запуску всіх потоків
-        NumberCalculator[] calculators = new NumberCalculator[threadDurations.length];
-
-        for (int i = 0; i < calculators.length; i++) {
-            calculators[i] = new NumberCalculator(i, incrementSteps[i], launchSignal);
-            calculators[i].start(); // Запуск потоку в стані очікування
+        for (int threadCount = 8; threadCount <= 8; threadCount *= 2) {
+            runTestWithThreads(threadCount, minDuration, maxDuration, minStep, maxStep);
         }
-
-        ThreadController controller = new ThreadController(threadDurations, calculators);
-        Thread controllerThread = new Thread(controller);
-
-        System.out.println(">>> Початок!");
-        controllerThread.start();
-        launchSignal.countDown(); // Дати сигнал на запуск всім потокам
     }
 
     public static int[] generateRandomArray(int size, int min, int max) {
@@ -48,6 +28,50 @@ public class Main {
             System.out.print(value + " ");
         }
         System.out.println();
+    }
+
+    private static void runTestWithThreads(int threadCount, int minDuration, int maxDuration, int minStep, int maxStep) {
+        System.out.println("\nКількість потоків: " + threadCount);
+
+        int[] threadDurations = generateRandomArray(threadCount, minDuration, maxDuration);
+        int[] incrementSteps = generateRandomArray(threadCount, minStep, maxStep);
+
+        System.out.print("Тривалість потоків: ");
+        printArray(threadDurations);
+        System.out.print("Кроки додавання: ");
+        printArray(incrementSteps);
+
+        CountDownLatch launchSignal = new CountDownLatch(1);
+        NumberCalculator[] calculators = new NumberCalculator[threadCount];
+
+        for (int i = 0; i < threadCount; i++) {
+            calculators[i] = new NumberCalculator(i, incrementSteps[i], launchSignal);
+            calculators[i].start();
+        }
+
+        ThreadController controller = new ThreadController(threadDurations, calculators);
+        Thread controllerThread = new Thread(controller);
+
+        try {
+            Thread.sleep(1000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        System.out.println(">>> Початок!");
+        long startTime = System.nanoTime();
+        controllerThread.start();
+        launchSignal.countDown();
+
+        try {
+            controllerThread.join();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        long endTime = System.nanoTime();
+        double durationMs = (endTime - startTime) / 1_000_000.0;
+        System.out.printf("Загальний час виконання: %.2f мс%n", durationMs);
     }
 }
 

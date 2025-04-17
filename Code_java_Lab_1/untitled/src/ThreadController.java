@@ -9,8 +9,9 @@ class ThreadController implements Runnable {
 
     @Override
     public void run() {
-        long startTime = System.currentTimeMillis();
+        //long start = System.nanoTime();//початок роботи
 
+        long startTime = System.currentTimeMillis();
         boolean[] isFinished = new boolean[workers.length];
         int completedCount = 0;
 
@@ -32,5 +33,7 @@ class ThreadController implements Runnable {
                 e.printStackTrace();
             }
         }
+        //long end = System.nanoTime(); //кінець роботи
+        //System.out.printf("Time: %.2f ms%n", (end - start) / 1_000_000.0);
     }
 }
