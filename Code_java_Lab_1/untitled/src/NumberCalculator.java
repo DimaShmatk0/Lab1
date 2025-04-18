@@ -4,7 +4,6 @@ class NumberCalculator extends Thread {
     int threadId;
     int increment;
     volatile boolean stopped = false;
-    CountDownLatch startLatch;
 
     public NumberCalculator(int threadId, int increment) {
         this.threadId = threadId;
