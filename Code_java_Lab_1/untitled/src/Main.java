@@ -1,5 +1,4 @@
 import java.util.Random;
-import java.util.concurrent.CountDownLatch;
 
 public class Main {
 
@@ -9,9 +8,9 @@ public class Main {
         int minStep = 2;
         int maxStep = 6;
 
-        for (int threadCount = 8; threadCount <= 8; threadCount *= 2) {
-            runTestWithThreads(threadCount, minDuration, maxDuration, minStep, maxStep);
-        }
+        int threadCount = 4;
+
+        runTestWithThreads(threadCount, minDuration, maxDuration, minStep, maxStep);
     }
 
     public static int[] generateRandomArray(int size, int min, int max) {
@@ -41,37 +40,15 @@ public class Main {
         System.out.print("Кроки додавання: ");
         printArray(incrementSteps);
 
-        CountDownLatch launchSignal = new CountDownLatch(1);
         NumberCalculator[] calculators = new NumberCalculator[threadCount];
+        ThreadController controllerThread = new ThreadController(threadDurations, calculators);
 
         for (int i = 0; i < threadCount; i++) {
-            calculators[i] = new NumberCalculator(i, incrementSteps[i], launchSignal);
+            calculators[i] = new NumberCalculator(i, incrementSteps[i]);
             calculators[i].start();
         }
 
-        ThreadController controller = new ThreadController(threadDurations, calculators);
-        Thread controllerThread = new Thread(controller);
-
-        try {
-            Thread.sleep(1000);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-
-        System.out.println(">>> Початок!");
-        long startTime = System.nanoTime();
         controllerThread.start();
-        launchSignal.countDown();
-
-        try {
-            controllerThread.join();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-
-        long endTime = System.nanoTime();
-        double durationMs = (endTime - startTime) / 1_000_000.0;
-        System.out.printf("Загальний час виконання: %.2f мс%n", durationMs);
     }
 }
 

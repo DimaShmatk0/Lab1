@@ -6,10 +6,9 @@ class NumberCalculator extends Thread {
     volatile boolean stopped = false;
     CountDownLatch startLatch;
 
-    public NumberCalculator(int threadId, int increment, CountDownLatch startLatch) {
+    public NumberCalculator(int threadId, int increment) {
         this.threadId = threadId;
         this.increment = increment;
-        this.startLatch = startLatch;
     }
 
     public void setStopped(boolean stopped) {
@@ -18,11 +17,6 @@ class NumberCalculator extends Thread {
 
     @Override
     public void run() {
-        try {
-            startLatch.await(); // Очікуємо сигналу запуску
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
 
         long totalSum = 0;
         long termsCount = 0;
